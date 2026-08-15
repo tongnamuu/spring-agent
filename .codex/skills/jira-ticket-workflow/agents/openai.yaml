@@ -1,0 +1,4 @@
+interface:
+  display_name: "Spring Agent Jira Workflow"
+  short_description: "Create spring-agent SPAG tickets only when requested"
+  default_prompt: "Use $jira-ticket-workflow to create a SPAG ticket exactly as requested without changing its status."

@@ -2,4 +2,4 @@
 
 ## Jira
 
-- Use `$jira-ticket-workflow` to create and synchronize Jira tickets for repository work.
+- Use `$jira-ticket-workflow` only when explicitly instructed to create or reference Jira tickets.
