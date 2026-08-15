@@ -1,6 +1,6 @@
 ---
 name: jira-ticket-workflow
-description: Create or reference Jira tickets for the spring-agent repository and its SPAG project only when the user explicitly instructs Codex to do so. Use for explicit requests to create, find, or link spring-agent Jira work. Never create tickets implicitly and never change Jira ticket status.
+description: Create or reference Jira tickets for the spring-agent repository and its SPAG project only when the user explicitly instructs Codex to do so. Use for explicit requests to create, find, or link spring-agent Jira work. Never create tickets, search Jira, or change ticket status implicitly.
 ---
 
 # Spring Agent Jira Workflow
@@ -11,15 +11,17 @@ Use Jira project `spring-agent` (`SPAG`).
 
 1. Create a Jira ticket only when the user explicitly instructs you to create one. Do not treat an implementation request, repository instruction, branch, commit, or pull request as permission to create a ticket.
 2. Never change a Jira ticket's status. Do not call a transition operation for any reason. Reading and reporting the current status is allowed.
+3. Never search Jira unless the user explicitly requests a search or duplicate check. A ticket creation request alone does not authorize a search. Do not proactively list projects or issues; use the fixed `SPAG` project mapping.
+4. Never create a ticket until the user has explicitly provided both the problem and the completion criteria. If either is missing, ask for the missing information and wait. Do not infer these two fields from repository context.
 
 ## Creation criteria
 
 When explicitly instructed to create a ticket:
 
+- Confirm that the user supplied both `Problem` and `Completion criteria`. Make no Jira call until both are present.
 - Follow the user's requested scope and fields exactly.
-- Inspect repository evidence only to fill missing implementation details.
-- Search `SPAG` for an equivalent ticket before creating a duplicate.
-- If an equivalent ticket exists, report it and ask whether a separate ticket is still required unless the user already answered that question.
+- Inspect repository evidence only after the required inputs are present and only to clarify implementation scope.
+- Create the ticket directly without searching Jira unless the user also requests a search or duplicate check.
 - Keep unrelated changes and inferred future work out of the ticket.
 
 Do not create a ticket for questions, read-only investigation, reviews, status checks, or implementation work unless the user explicitly asks for ticket creation.
@@ -28,6 +30,6 @@ Do not create a ticket for questions, read-only investigation, reviews, status c
 
 - Use `Task` by default and `Bug` only for a confirmed defect. Use another type only when the user requests it or the scope clearly requires it.
 - Assign the current Atlassian user unless another assignee is named.
-- Keep the ticket concise: summary, reason, scope, and verifiable completion criteria.
+- Keep the ticket concise: summary, problem, scope, and verifiable completion criteria.
 - Do not invent estimates, priority, labels, releases, or requirements.
 - Add branches, commits, pull requests, comments, or links only when explicitly requested.
