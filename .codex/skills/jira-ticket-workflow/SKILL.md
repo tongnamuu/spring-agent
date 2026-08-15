@@ -13,6 +13,7 @@ Use Jira project `spring-agent` (`SPAG`).
 2. Never change a Jira ticket's status. Do not call a transition operation for any reason. Reading and reporting the current status is allowed.
 3. Never search Jira unless the user explicitly requests a search or duplicate check. A ticket creation request alone does not authorize a search. Do not proactively list projects or issues; use the fixed `SPAG` project mapping.
 4. Never create a ticket until the user has explicitly provided both the problem and the completion criteria. If either is missing, ask for the missing information and wait. Do not infer these two fields from repository context.
+5. Name every new branch associated with Jira work exactly `feat/SPAG-<ISSUE_NUMBER>`. If the issue number was not provided or returned by a ticket created in the current turn, ask for it. Never search for or infer the number. Do not rename a published branch unless the user explicitly requests it.
 
 ## Creation criteria
 
@@ -32,4 +33,4 @@ Do not create a ticket for questions, read-only investigation, reviews, status c
 - Assign the current Atlassian user unless another assignee is named.
 - Keep the ticket concise: summary, problem, scope, and verifiable completion criteria.
 - Do not invent estimates, priority, labels, releases, or requirements.
-- Add branches, commits, pull requests, comments, or links only when explicitly requested.
+- Add commits, pull requests, comments, or links to Jira only when explicitly requested.
