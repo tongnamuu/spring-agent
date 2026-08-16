@@ -21,9 +21,12 @@ repositories {
 }
 
 dependencies {
+	implementation(platform("org.springframework.ai:spring-ai-bom:2.0.0"))
+	implementation("org.springframework.ai:spring-ai-starter-model-ollama")
 	implementation("org.springframework.boot:spring-boot-starter-graphql")
 	implementation("org.springframework.boot:spring-boot-starter-grpc-client")
 	implementation("org.springframework.boot:spring-boot-starter-grpc-server")
+	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("tools.jackson.module:jackson-module-kotlin")
 	compileOnly("org.projectlombok:lombok")
