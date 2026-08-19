@@ -56,13 +56,48 @@ class SpringAiChatServiceTests {
 		)
 		val chatService = chatService(readTimeout = Duration.ofSeconds(1))
 
-		val response = chatService.chat("Hello")
+		val response = chatService.chat(listOf(ChatMessage(ChatRole.USER, "Hello")))
 
 		assertEquals("Hello from WireMock", response)
 		wireMock.verify(
 			postRequestedFor(urlEqualTo("/api/chat"))
 				.withRequestBody(matchingJsonPath("$.model", equalTo(TEST_MODEL)))
 				.withRequestBody(matchingJsonPath("$.messages[0].content", equalTo("Hello"))),
+		)
+	}
+
+	@Test
+	fun `sends conversation history to the Ollama API in order`() {
+		wireMock.stubFor(
+			post(urlEqualTo("/api/chat"))
+				.willReturn(
+					aResponse()
+						.withHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+						.withBody(ollamaResponse("Your name is Rook")),
+				),
+		)
+		val chatService = chatService(readTimeout = Duration.ofSeconds(1))
+
+		val response = chatService.chat(
+			listOf(
+				ChatMessage(ChatRole.SYSTEM, "Remember user details"),
+				ChatMessage(ChatRole.USER, "My name is Rook"),
+				ChatMessage(ChatRole.ASSISTANT, "Nice to meet you, Rook"),
+				ChatMessage(ChatRole.USER, "What is my name?"),
+			),
+		)
+
+		assertEquals("Your name is Rook", response)
+		wireMock.verify(
+			postRequestedFor(urlEqualTo("/api/chat"))
+				.withRequestBody(matchingJsonPath("$.messages[0].role", equalTo("system")))
+				.withRequestBody(matchingJsonPath("$.messages[0].content", equalTo("Remember user details")))
+				.withRequestBody(matchingJsonPath("$.messages[1].role", equalTo("user")))
+				.withRequestBody(matchingJsonPath("$.messages[1].content", equalTo("My name is Rook")))
+				.withRequestBody(matchingJsonPath("$.messages[2].role", equalTo("assistant")))
+				.withRequestBody(matchingJsonPath("$.messages[2].content", equalTo("Nice to meet you, Rook")))
+				.withRequestBody(matchingJsonPath("$.messages[3].role", equalTo("user")))
+				.withRequestBody(matchingJsonPath("$.messages[3].content", equalTo("What is my name?"))),
 		)
 	}
 
@@ -80,7 +115,7 @@ class SpringAiChatServiceTests {
 		val chatService = chatService(readTimeout = Duration.ofMillis(100))
 
 		val exception = assertFailsWith<RestClientException> {
-			chatService.chat("Wait for me")
+			chatService.chat(listOf(ChatMessage(ChatRole.USER, "Wait for me")))
 		}
 
 		assertIs<SocketTimeoutException>(exception.rootCause())

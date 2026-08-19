@@ -9,6 +9,6 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/api/chat")
 class ChatController(private val chatService: ChatService) {
-	@PostMapping(consumes = [MediaType.TEXT_PLAIN_VALUE], produces = [MediaType.TEXT_PLAIN_VALUE])
-	fun chat(@RequestBody message: String): String = chatService.chat(message)
+	@PostMapping(consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.TEXT_PLAIN_VALUE])
+	fun chat(@RequestBody request: ChatRequest): String = chatService.chat(request.messages)
 }
