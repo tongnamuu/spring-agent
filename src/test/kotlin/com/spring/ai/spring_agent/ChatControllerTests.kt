@@ -14,9 +14,19 @@ class ChatControllerTests {
 		val mockMvc = MockMvcBuilders.standaloneSetup(ChatController(chatService)).build()
 
 		mockMvc.post("/api/chat") {
-			contentType = MediaType.TEXT_PLAIN
+			contentType = MediaType.APPLICATION_JSON
 			accept = MediaType.TEXT_PLAIN
-			content = "Hello"
+			content =
+				"""
+				{
+				  "messages": [
+				    { "role": "system", "content": "Remember user details" },
+				    { "role": "user", "content": "My name is Rook" },
+				    { "role": "assistant", "content": "Nice to meet you, Rook" },
+				    { "role": "user", "content": "What is my name?" }
+				  ]
+				}
+				""".trimIndent()
 		}.andExpect {
 			status { isOk() }
 			content {
@@ -25,15 +35,23 @@ class ChatControllerTests {
 			}
 		}
 
-		assertEquals("Hello", chatService.lastMessage)
+		assertEquals(
+			listOf(
+				ChatMessage(ChatRole.SYSTEM, "Remember user details"),
+				ChatMessage(ChatRole.USER, "My name is Rook"),
+				ChatMessage(ChatRole.ASSISTANT, "Nice to meet you, Rook"),
+				ChatMessage(ChatRole.USER, "What is my name?"),
+			),
+			chatService.lastMessages,
+		)
 	}
 
 	private class FakeChatService(private val response: String) : ChatService {
-		var lastMessage: String? = null
+		var lastMessages: List<ChatMessage>? = null
 			private set
 
-		override fun chat(message: String): String {
-			lastMessage = message
+		override fun chat(messages: List<ChatMessage>): String {
+			lastMessages = messages
 			return response
 		}
 	}
