@@ -102,6 +102,43 @@ class SpringAiChatServiceTests {
 	}
 
 	@Test
+	fun `adds retrieved knowledge to the prompt`() {
+		wireMock.stubFor(
+			post(urlEqualTo("/api/chat"))
+				.willReturn(
+					aResponse()
+						.withHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+						.withBody(ollamaResponse("Dijkstra uses a priority queue")),
+				),
+		)
+		val knowledge = listOf(
+			KnowledgeSearchResult(
+				id = "dijkstra-1",
+				documentId = "dijkstra",
+				title = "Dijkstra's algorithm",
+				topic = "algorithms",
+				source = "Algorithms example",
+				content = "Dijkstra repeatedly selects the closest unsettled vertex.",
+				score = 0.91,
+			),
+		)
+		val chatService = chatService(
+			readTimeout = Duration.ofSeconds(1),
+			knowledgeRetriever = KnowledgeRetriever { knowledge },
+		)
+
+		val response = chatService.chat(listOf(ChatMessage(ChatRole.USER, "How does Dijkstra work?")))
+
+		assertEquals("Dijkstra uses a priority queue", response)
+		wireMock.verify(
+			postRequestedFor(urlEqualTo("/api/chat"))
+				.withRequestBody(matchingJsonPath("$.messages[0].role", equalTo("system")))
+				.withRequestBody(matchingJsonPath("$.messages[0].content", com.github.tomakehurst.wiremock.client.WireMock.containing("Dijkstra's algorithm")))
+				.withRequestBody(matchingJsonPath("$.messages[1].content", equalTo("How does Dijkstra work?"))),
+		)
+	}
+
+	@Test
 	fun `fails when the Ollama API exceeds the read timeout`() {
 		wireMock.stubFor(
 			post(urlEqualTo("/api/chat"))
@@ -122,7 +159,10 @@ class SpringAiChatServiceTests {
 		wireMock.verify(1, postRequestedFor(urlEqualTo("/api/chat")))
 	}
 
-	private fun chatService(readTimeout: Duration): SpringAiChatService {
+	private fun chatService(
+		readTimeout: Duration,
+		knowledgeRetriever: KnowledgeRetriever = KnowledgeRetriever { emptyList() },
+	): SpringAiChatService {
 		val requestFactory = SimpleClientHttpRequestFactory().apply {
 			setReadTimeout(readTimeout)
 		}
@@ -136,7 +176,7 @@ class SpringAiChatServiceTests {
 			.retryTemplate(RetryTemplate(RetryPolicy.withMaxRetries(0)))
 			.build()
 
-		return SpringAiChatService(ChatClient.builder(chatModel))
+		return SpringAiChatService(ChatClient.builder(chatModel), knowledgeRetriever)
 	}
 
 	private fun ollamaResponse(content: String): String =
