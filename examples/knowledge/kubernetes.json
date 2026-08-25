@@ -1,0 +1,6 @@
+{
+  "title": "Kubernetes Deployment 롤링 업데이트",
+  "topic": "kubernetes",
+  "source": "Kubernetes 교재 예제 노트",
+  "content": "Deployment는 ReplicaSet을 통해 동일한 Pod 복제본을 선언적으로 관리한다. Pod 템플릿이 변경되면 새로운 ReplicaSet의 복제본을 늘리고 기존 ReplicaSet의 복제본을 줄이는 롤링 업데이트를 수행한다. maxSurge와 maxUnavailable로 업데이트 중 추가 생성 가능한 Pod 수와 사용할 수 없어도 되는 Pod 수를 조절한다."
+}
