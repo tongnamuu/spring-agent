@@ -7,20 +7,20 @@ import org.springframework.ai.chat.messages.SystemMessage
 import org.springframework.ai.chat.messages.UserMessage
 import org.springframework.stereotype.Service
 
-fun interface ChatService {
+fun interface RagChat {
 	fun chat(messages: List<ChatMessage>): String
 }
 
 @Service
-class SpringAiChatService(
+class SpringAiRagChat(
 	chatClientBuilder: ChatClient.Builder,
-	private val knowledgeRetriever: KnowledgeRetriever,
-) : ChatService {
+	private val knowledgeSearch: KnowledgeSearch,
+) : RagChat {
 	private val chatClient = chatClientBuilder.build()
 
 	override fun chat(messages: List<ChatMessage>): String {
 		val knowledge = messages.lastOrNull { it.role == ChatRole.USER }
-			?.let { knowledgeRetriever.search(it.content) }
+			?.let { knowledgeSearch.search(it.content) }
 			.orEmpty()
 		val springAiMessages = buildList {
 			if (knowledge.isNotEmpty()) add(SystemMessage(knowledge.toRagContext()))

@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test
 import tools.jackson.databind.json.JsonMapper
 import kotlin.test.assertEquals
 
-class ElasticsearchKnowledgeStoreTests {
+class ElasticsearchVectorStorageTests {
 	private lateinit var wireMock: WireMockServer
 
 	@BeforeEach
@@ -123,8 +123,8 @@ class ElasticsearchKnowledgeStoreTests {
 		)
 	}
 
-	private fun store(initializeSchema: Boolean = false) = ElasticsearchKnowledgeStore(
-		textEmbedder = TextEmbedder { texts -> texts.map { floatArrayOf(1f, 0f, 0f) } },
+	private fun store(initializeSchema: Boolean = false) = ElasticsearchVectorStorage(
+		textEmbedding = TextEmbedding { texts -> texts.map { floatArrayOf(1f, 0f, 0f) } },
 		objectMapper = JsonMapper.builder().build(),
 		elasticsearchUri = wireMock.baseUrl(),
 		indexName = "knowledge",

@@ -4,14 +4,14 @@ import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class KnowledgeServiceTests {
+class KnowledgeIngestionAndSearchTests {
 
 	@Test
 	fun `stores every generated chunk`() {
-		val store = FakeKnowledgeStore()
-		val service = service(
-			store = store,
-			chunker = KnowledgeChunker { listOf("chunk one", "chunk two") },
+		val storage = FakeVectorStorage()
+		val ingestion = KnowledgeIngestion(
+			vectorStorage = storage,
+			documentChunking = DocumentChunking { listOf("chunk one", "chunk two") },
 		)
 		val request = KnowledgeDocumentRequest(
 			title = "MySQL indexes",
@@ -20,11 +20,11 @@ class KnowledgeServiceTests {
 			content = "Long source content",
 		)
 
-		val result = service.add(request)
+		val result = ingestion.add(request)
 
 		assertEquals(2, result.chunkCount)
-		assertEquals(request, store.addedRequest)
-		assertEquals(listOf("chunk one", "chunk two"), store.addedChunks)
+		assertEquals(request, storage.addedRequest)
+		assertEquals(listOf("chunk one", "chunk two"), storage.addedChunks)
 	}
 
 	@Test
@@ -38,17 +38,17 @@ class KnowledgeServiceTests {
 			title = "Bellman-Ford algorithm",
 			content = "Bellman-Ford finds shortest paths when edges can have negative weights.",
 		)
-		val store = FakeKnowledgeStore(candidates = listOf(dijkstra, bellmanFord))
-		val evaluator = KnowledgeRelevanceEvaluator { query, candidate ->
+		val storage = FakeVectorStorage(candidates = listOf(dijkstra, bellmanFord))
+		val relevance = SearchRelevance { query, candidate ->
 			!(query.contains("negative", ignoreCase = true) && candidate.title.contains("Dijkstra"))
 		}
-		val service = service(store = store, relevanceEvaluator = evaluator)
+		val search = search(storage = storage, relevance = relevance)
 
-		val matches = service.search("shortest paths with negative edge weights", topK = 5)
+		val matches = search.search("shortest paths with negative edge weights", topK = 5)
 
 		assertEquals(listOf("Bellman-Ford algorithm"), matches.map { it.title })
-		assertEquals(10, store.lastTopK)
-		assertEquals(0.35, store.lastSimilarityThreshold)
+		assertEquals(10, storage.lastTopK)
+		assertEquals(0.35, storage.lastSimilarityThreshold)
 	}
 
 	@Test
@@ -57,24 +57,22 @@ class KnowledgeServiceTests {
 			title = "다익스트라 알고리즘",
 			content = "모든 간선의 가중치가 0 이상일 때 최단 경로를 구한다.",
 		)
-		val service = service(
-			store = FakeKnowledgeStore(candidates = listOf(dijkstra)),
-			relevanceEvaluator = KnowledgeRelevanceEvaluator { _, _ -> false },
+		val search = search(
+			storage = FakeVectorStorage(candidates = listOf(dijkstra)),
+			relevance = SearchRelevance { _, _ -> false },
 		)
 
-		val matches = service.search("음의 가중치가 있는 그래프의 최단거리", topK = 5)
+		val matches = search.search("음의 가중치가 있는 그래프의 최단거리", topK = 5)
 
 		assertTrue(matches.isEmpty())
 	}
 
-	private fun service(
-		store: FakeKnowledgeStore,
-		chunker: KnowledgeChunker = KnowledgeChunker { listOf(it) },
-		relevanceEvaluator: KnowledgeRelevanceEvaluator = KnowledgeRelevanceEvaluator { _, _ -> true },
-	) = KnowledgeService(
-		knowledgeStore = store,
-		chunker = chunker,
-		relevanceEvaluator = relevanceEvaluator,
+	private fun search(
+		storage: FakeVectorStorage,
+		relevance: SearchRelevance = SearchRelevance { _, _ -> true },
+	) = VectorKnowledgeSearch(
+		vectorStorage = storage,
+		searchRelevance = relevance,
 		defaultTopK = 5,
 		candidateMultiplier = 2,
 		similarityThreshold = 0.35,
@@ -94,9 +92,9 @@ class KnowledgeServiceTests {
 		score = 0.9,
 	)
 
-	private class FakeKnowledgeStore(
+	private class FakeVectorStorage(
 		private val candidates: List<KnowledgeSearchResult> = emptyList(),
-	) : KnowledgeStore {
+	) : VectorStorage {
 		var addedRequest: KnowledgeDocumentRequest? = null
 		var addedChunks: List<String>? = null
 		var lastTopK: Int? = null

@@ -22,7 +22,7 @@ import org.springframework.http.MediaType
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class SpringAiKnowledgeRelevanceEvaluatorTests {
+class SpringAiSearchRelevanceTests {
 	private lateinit var wireMock: WireMockServer
 
 	@BeforeEach
@@ -64,14 +64,14 @@ class SpringAiKnowledgeRelevanceEvaluatorTests {
 		assertFalse(relevant)
 	}
 
-	private fun evaluator(): SpringAiKnowledgeRelevanceEvaluator {
+	private fun evaluator(): SpringAiSearchRelevance {
 		val ollamaApi = OllamaApi.builder().baseUrl(wireMock.baseUrl()).build()
 		val chatModel = OllamaChatModel.builder()
 			.ollamaApi(ollamaApi)
 			.options(OllamaChatOptions.builder().model(TEST_MODEL).build())
 			.retryTemplate(RetryTemplate(RetryPolicy.withMaxRetries(0)))
 			.build()
-		return SpringAiKnowledgeRelevanceEvaluator(ChatClient.builder(chatModel))
+		return SpringAiSearchRelevance(ChatClient.builder(chatModel))
 	}
 
 	private fun stubDecision(decision: String) {

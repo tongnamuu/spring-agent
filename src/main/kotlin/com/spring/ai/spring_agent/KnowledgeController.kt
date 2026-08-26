@@ -10,14 +10,17 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/api/knowledge")
-class KnowledgeController(private val knowledgeService: KnowledgeService) {
+class KnowledgeController(
+	private val knowledgeIngestion: KnowledgeIngestion,
+	private val knowledgeSearch: VectorKnowledgeSearch,
+) {
 	@PostMapping("/documents", consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.APPLICATION_JSON_VALUE])
 	@ResponseStatus(HttpStatus.CREATED)
-	fun add(@RequestBody request: KnowledgeDocumentRequest): KnowledgeDocumentResponse = knowledgeService.add(request)
+	fun add(@RequestBody request: KnowledgeDocumentRequest): KnowledgeDocumentResponse = knowledgeIngestion.add(request)
 
 	@PostMapping("/search", consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.APPLICATION_JSON_VALUE])
 	fun search(@RequestBody request: KnowledgeSearchRequest): List<KnowledgeSearchResult> =
 		request.topK
-			?.let { knowledgeService.search(request.query, it) }
-			?: knowledgeService.search(request.query)
+			?.let { knowledgeSearch.search(request.query, it) }
+			?: knowledgeSearch.search(request.query)
 }
