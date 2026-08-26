@@ -27,7 +27,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 
-class SpringAiChatServiceTests {
+class SpringAiRagChatTests {
 
 	private lateinit var wireMock: WireMockServer
 
@@ -54,9 +54,9 @@ class SpringAiChatServiceTests {
 						.withBody(ollamaResponse("Hello from WireMock")),
 				),
 		)
-		val chatService = chatService(readTimeout = Duration.ofSeconds(1))
+		val ragChat = ragChat(readTimeout = Duration.ofSeconds(1))
 
-		val response = chatService.chat(listOf(ChatMessage(ChatRole.USER, "Hello")))
+		val response = ragChat.chat(listOf(ChatMessage(ChatRole.USER, "Hello")))
 
 		assertEquals("Hello from WireMock", response)
 		wireMock.verify(
@@ -76,9 +76,9 @@ class SpringAiChatServiceTests {
 						.withBody(ollamaResponse("Your name is Rook")),
 				),
 		)
-		val chatService = chatService(readTimeout = Duration.ofSeconds(1))
+		val ragChat = ragChat(readTimeout = Duration.ofSeconds(1))
 
-		val response = chatService.chat(
+		val response = ragChat.chat(
 			listOf(
 				ChatMessage(ChatRole.SYSTEM, "Remember user details"),
 				ChatMessage(ChatRole.USER, "My name is Rook"),
@@ -122,12 +122,12 @@ class SpringAiChatServiceTests {
 				score = 0.91,
 			),
 		)
-		val chatService = chatService(
+		val ragChat = ragChat(
 			readTimeout = Duration.ofSeconds(1),
-			knowledgeRetriever = KnowledgeRetriever { knowledge },
+			knowledgeSearch = KnowledgeSearch { knowledge },
 		)
 
-		val response = chatService.chat(listOf(ChatMessage(ChatRole.USER, "How does Dijkstra work?")))
+		val response = ragChat.chat(listOf(ChatMessage(ChatRole.USER, "How does Dijkstra work?")))
 
 		assertEquals("Dijkstra uses a priority queue", response)
 		wireMock.verify(
@@ -149,20 +149,20 @@ class SpringAiChatServiceTests {
 						.withFixedDelay(500),
 				),
 		)
-		val chatService = chatService(readTimeout = Duration.ofMillis(100))
+		val ragChat = ragChat(readTimeout = Duration.ofMillis(100))
 
 		val exception = assertFailsWith<RestClientException> {
-			chatService.chat(listOf(ChatMessage(ChatRole.USER, "Wait for me")))
+			ragChat.chat(listOf(ChatMessage(ChatRole.USER, "Wait for me")))
 		}
 
 		assertIs<SocketTimeoutException>(exception.rootCause())
 		wireMock.verify(1, postRequestedFor(urlEqualTo("/api/chat")))
 	}
 
-	private fun chatService(
+	private fun ragChat(
 		readTimeout: Duration,
-		knowledgeRetriever: KnowledgeRetriever = KnowledgeRetriever { emptyList() },
-	): SpringAiChatService {
+		knowledgeSearch: KnowledgeSearch = KnowledgeSearch { emptyList() },
+	): SpringAiRagChat {
 		val requestFactory = SimpleClientHttpRequestFactory().apply {
 			setReadTimeout(readTimeout)
 		}
@@ -176,7 +176,7 @@ class SpringAiChatServiceTests {
 			.retryTemplate(RetryTemplate(RetryPolicy.withMaxRetries(0)))
 			.build()
 
-		return SpringAiChatService(ChatClient.builder(chatModel), knowledgeRetriever)
+		return SpringAiRagChat(ChatClient.builder(chatModel), knowledgeSearch)
 	}
 
 	private fun ollamaResponse(content: String): String =

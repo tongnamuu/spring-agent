@@ -1,39 +1,28 @@
 package com.spring.ai.spring_agent
 
 import jakarta.annotation.PostConstruct
-import org.springframework.ai.embedding.EmbeddingModel
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.MediaType
-import org.springframework.stereotype.Component
 import org.springframework.stereotype.Repository
 import org.springframework.web.client.RestClient
 import tools.jackson.databind.ObjectMapper
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 
-interface KnowledgeStore {
+interface VectorStorage {
 	fun add(request: KnowledgeDocumentRequest, chunks: List<String>): KnowledgeDocumentResponse
 	fun searchCandidates(query: String, topK: Int, similarityThreshold: Double): List<KnowledgeSearchResult>
 }
 
-fun interface TextEmbedder {
-	fun embedAll(texts: List<String>): List<FloatArray>
-}
-
-@Component
-class SpringAiTextEmbedder(private val embeddingModel: EmbeddingModel) : TextEmbedder {
-	override fun embedAll(texts: List<String>): List<FloatArray> = embeddingModel.embed(texts)
-}
-
 @Repository
-class ElasticsearchKnowledgeStore(
-	private val textEmbedder: TextEmbedder,
+class ElasticsearchVectorStorage(
+	private val textEmbedding: TextEmbedding,
 	private val objectMapper: ObjectMapper,
 	@Value("\${spring.elasticsearch.uris:http://localhost:9200}") elasticsearchUri: String,
 	@Value("\${spring.ai.vectorstore.elasticsearch.index-name:spring-agent-knowledge}") private val indexName: String,
 	@Value("\${spring.ai.vectorstore.elasticsearch.dimensions:1024}") private val dimensions: Int,
 	@Value("\${spring.ai.vectorstore.elasticsearch.initialize-schema:true}") private val initializeSchema: Boolean,
-) : KnowledgeStore {
+) : VectorStorage {
 	private val restClient = RestClient.builder().baseUrl(elasticsearchUri.substringBefore(',')).build()
 
 	@PostConstruct
@@ -51,7 +40,7 @@ class ElasticsearchKnowledgeStore(
 	override fun add(request: KnowledgeDocumentRequest, chunks: List<String>): KnowledgeDocumentResponse {
 		val documentId = UUID.randomUUID().toString()
 		val contents = chunks.map { "${request.title}\n\n$it" }
-		val embeddings = textEmbedder.embedAll(contents)
+		val embeddings = textEmbedding.embed(contents)
 		require(embeddings.size == contents.size) { "Embedding count does not match chunk count" }
 
 		val bulkBody = contents.indices.joinToString(separator = "", transform = { index ->
@@ -92,7 +81,7 @@ class ElasticsearchKnowledgeStore(
 		similarityThreshold: Double,
 	): List<KnowledgeSearchResult> {
 		val instructedQuery = "$QUERY_INSTRUCTION\nQuery: $query"
-		val queryVector = textEmbedder.embedAll(listOf(instructedQuery)).single()
+		val queryVector = textEmbedding.embed(listOf(instructedQuery)).single()
 		require(queryVector.size == dimensions) {
 			"Embedding dimensions ${queryVector.size} do not match Elasticsearch index dimensions $dimensions"
 		}

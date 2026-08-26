@@ -9,9 +9,9 @@ import kotlin.test.assertEquals
 class ChatControllerTests {
 
 	@Test
-	fun `returns the fake service response as plain text`() {
-		val chatService = FakeChatService(response = "Hello from the fake service")
-		val mockMvc = MockMvcBuilders.standaloneSetup(ChatController(chatService)).build()
+	fun `returns the fake RAG chat response as plain text`() {
+		val ragChat = FakeRagChat(response = "Hello from the fake RAG chat")
+		val mockMvc = MockMvcBuilders.standaloneSetup(ChatController(ragChat)).build()
 
 		mockMvc.post("/api/chat") {
 			contentType = MediaType.APPLICATION_JSON
@@ -31,7 +31,7 @@ class ChatControllerTests {
 			status { isOk() }
 			content {
 				contentTypeCompatibleWith(MediaType.TEXT_PLAIN)
-				string("Hello from the fake service")
+				string("Hello from the fake RAG chat")
 			}
 		}
 
@@ -42,11 +42,11 @@ class ChatControllerTests {
 				ChatMessage(ChatRole.ASSISTANT, "Nice to meet you, Rook"),
 				ChatMessage(ChatRole.USER, "What is my name?"),
 			),
-			chatService.lastMessages,
+			ragChat.lastMessages,
 		)
 	}
 
-	private class FakeChatService(private val response: String) : ChatService {
+	private class FakeRagChat(private val response: String) : RagChat {
 		var lastMessages: List<ChatMessage>? = null
 			private set
 

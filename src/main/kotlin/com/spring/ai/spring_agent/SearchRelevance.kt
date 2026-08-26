@@ -4,8 +4,12 @@ import org.springframework.ai.chat.client.ChatClient
 import org.springframework.ai.ollama.api.OllamaChatOptions
 import org.springframework.stereotype.Service
 
+fun interface SearchRelevance {
+	fun isRelevant(query: String, candidate: KnowledgeSearchResult): Boolean
+}
+
 @Service
-class SpringAiKnowledgeRelevanceEvaluator(chatClientBuilder: ChatClient.Builder) : KnowledgeRelevanceEvaluator {
+class SpringAiSearchRelevance(chatClientBuilder: ChatClient.Builder) : SearchRelevance {
 	private val chatClient = chatClientBuilder.build()
 	private val relevanceOptions = OllamaChatOptions.builder()
 		.disableThinking()

@@ -3,14 +3,14 @@ package com.spring.ai.spring_agent
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 
-fun interface KnowledgeChunker {
+fun interface DocumentChunking {
 	fun split(content: String): List<String>
 }
 
 @Component
-class ParagraphKnowledgeChunker(
+class ParagraphDocumentChunking(
 	@Value("\${spring.rag.chunk.max-characters:1200}") private val maxCharacters: Int,
-) : KnowledgeChunker {
+) : DocumentChunking {
 	override fun split(content: String): List<String> {
 		val paragraphs = content.trim()
 			.split(Regex("\\n\\s*\\n"))
