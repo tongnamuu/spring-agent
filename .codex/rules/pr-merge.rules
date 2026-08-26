@@ -1,0 +1,14 @@
+# A PR may be merged only after the user approves this exact command invocation.
+prefix_rule(
+    pattern = ["gh", "pr", "merge"],
+    decision = "prompt",
+    justification = "Pull request merges require explicit user approval for the specific PR.",
+    match = [
+        "gh pr merge 7 --merge",
+        "gh pr merge https://github.com/example/repository/pull/7 --squash",
+    ],
+    not_match = [
+        "gh pr view 7",
+        "gh pr create --base main",
+    ],
+)

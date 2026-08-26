@@ -1,0 +1,5 @@
+# Keep command-rule approvals in front of the user rather than an automatic reviewer.
+approvals_reviewer = "user"
+
+[features]
+hooks = true
